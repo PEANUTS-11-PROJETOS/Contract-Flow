@@ -64,7 +64,16 @@ export default async function AdminPage() {
           <span style={{ fontSize: 15, fontWeight: 700 }}>ContractFlow</span>
           <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 6, background: '#7C3AED', color: '#fff' }}>ADMIN</span>
         </div>
-        <div style={{ fontSize: 13, color: '#6B7280' }}>{ADMIN_EMAIL}</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <span style={{ fontSize: 13, color: '#6B7280' }}>{ADMIN_EMAIL}</span>
+          <a href="/dashboard" style={{
+            padding: '6px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600,
+            color: '#E5E7EB', border: '1px solid #374151', textDecoration: 'none',
+            background: '#1F2937',
+          }}>
+            ← Voltar ao painel
+          </a>
+        </div>
       </div>
 
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '40px' }}>
