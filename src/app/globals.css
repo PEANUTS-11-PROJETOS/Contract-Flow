@@ -1,27 +1,52 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #ffffff;
-  --fg: #0f0a1a;
-  --card: #faf8ff;
-  --card-border: #ede9fe;
-  --muted: #f5f3ff;
-  --muted-fg: #6b7280;
-  --primary: #7c3aed;
-  --primary-hover: #6d28d9;
-  --primary-fg: #ffffff;
-  --primary-light: #ede9fe;
-  --sidebar-bg: #1a0533;
-  --sidebar-fg: #e8e0f7;
-  --sidebar-muted: #9b8ac4;
-  --sidebar-active: rgba(124,58,237,0.85);
-  --border: #e5e7eb;
-  --input-border: #d1d5db;
-  --destructive: #dc2626;
-  --success: #16a34a;
-  --warning: #d97706;
-  --radius: 10px;
-  --radius-sm: 7px;
+  /* Fundos e superfícies */
+  --bg:            #F4F3EE;
+  --surface:       #FFFFFF;
+  --surface-muted: #F7FAF8;
+  --card:          #FFFFFF;
+  --card-border:   #E9E7DE;
+  --muted:         #F7FAF8;
+
+  /* Texto */
+  --fg:        #16241F;
+  --muted-fg:  #69756E;
+  --faint:     #7A8A83;
+
+  /* Marca — verde Folha */
+  --primary:       #1E9E6A;
+  --primary-hover: #17875A;
+  --primary-fg:    #FFFFFF;
+  --primary-light: #E7F5EE;
+  --primary-700:   #11704E;
+  --primary-tint:  #CFEEDE;
+
+  /* Sidebar */
+  --sidebar-bg:     #EAF4EF;
+  --sidebar-fg:     #16241F;
+  --sidebar-muted:  #69756E;
+  --sidebar-active: #1E9E6A;
+  --sidebar-border: #DDE9E2;
+
+  /* Bordas e inputs */
+  --border:       #E9E7DE;
+  --border-soft:  #E3E1D8;
+  --input-border: #D5D3CB;
+
+  /* Semânticas */
+  --destructive:     #DC4E45;
+  --destructive-bg:  #FBE3DF;
+  --success:         #1E9E6A;
+  --warning:         #D98A1F;
+  --warning-700:     #9A6B12;
+  --warning-tint:    #F7E8C8;
+  --warning-banner:  #FBEEDB;
+  --danger:          #DC4E45;
+  --danger-tint:     #FBE3DF;
+
+  --radius:    12px;
+  --radius-sm: 9px;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -29,7 +54,6 @@
 body {
   background: var(--bg);
   color: var(--fg);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-size: 14px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
@@ -37,4 +61,4 @@ body {
 
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: #C8C6BE; border-radius: 3px; }

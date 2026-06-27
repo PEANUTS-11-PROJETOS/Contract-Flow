@@ -1,28 +1,21 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { FileText, DollarSign, Clock, CheckCircle } from 'lucide-react'
 import Link from 'next/link'
+import {
+  fmtMoeda, fmtData, getInitials,
+  contratoStatusDerivado, diasParaVencer,
+  STATUS_CHIP, STATUS_AVATAR,
+} from '@/lib/utils'
 
-function fmtMoeda(v: number) {
-  return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-}
-
-function fmtData(d: string) {
-  return new Date(d + 'T12:00:00').toLocaleDateString('pt-BR')
-}
-
-const STATUS_LABEL: Record<string, string> = {
-  proposta: 'Proposta',
-  ativo: 'Ativo',
-  concluido: 'Concluído',
-  cancelado: 'Cancelado',
-}
-
-const STATUS_COLOR: Record<string, string> = {
-  proposta: '#d97706',
-  ativo: '#7c3aed',
-  concluido: '#16a34a',
-  cancelado: '#9ca3af',
+type Contrato = {
+  id: string
+  titulo: string
+  tipo: string | null
+  cliente_nome: string
+  valor_total: number
+  periodicidade: string | null
+  data_renovacao: string | null
+  alerta_dias: number | null
 }
 
 export default async function DashboardPage() {
@@ -30,116 +23,247 @@ export default async function DashboardPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: contratos } = await supabase
-    .from('contratos')
-    .select('id, titulo, cliente_nome, valor_total, status, data_evento, created_at')
-    .order('created_at', { ascending: false })
-    .limit(5)
+  const agora     = new Date()
+  const inicioMes = new Date(agora.getFullYear(), agora.getMonth(), 1).toISOString().split('T')[0]
+  const fimMes    = new Date(agora.getFullYear(), agora.getMonth() + 1, 0).toISOString().split('T')[0]
 
-  const { data: todos } = await supabase
-    .from('contratos')
-    .select('valor_total, status')
+  const seisAtras = new Date(agora)
+  seisAtras.setMonth(seisAtras.getMonth() - 5)
+  seisAtras.setDate(1)
 
-  const totalContratos   = todos?.length ?? 0
-  const totalFechado     = todos?.reduce((s, c) => s + Number(c.valor_total ?? 0), 0) ?? 0
-  const totalAtivos      = todos?.filter(c => c.status === 'ativo').length ?? 0
-  const totalConcluidos  = todos?.filter(c => c.status === 'concluido').length ?? 0
+  const [
+    { data: contratos },
+    { data: pagPagosMes },
+    { data: pagPendentes },
+    { data: receitaHist },
+  ] = await Promise.all([
+    supabase
+      .from('contratos')
+      .select('id, titulo, tipo, cliente_nome, valor_total, periodicidade, data_renovacao, alerta_dias')
+      .order('data_renovacao', { ascending: true }),
+    supabase.from('pagamentos').select('valor')
+      .eq('status', 'pago')
+      .gte('data_pagamento', inicioMes)
+      .lte('data_pagamento', fimMes),
+    supabase.from('pagamentos').select('valor').eq('status', 'pendente'),
+    supabase.from('pagamentos').select('valor, data_pagamento')
+      .eq('status', 'pago')
+      .gte('data_pagamento', seisAtras.toISOString().split('T')[0]),
+  ])
 
-  const { data: pagamentos } = await supabase
-    .from('pagamentos')
-    .select('valor')
-    .eq('status', 'pago')
+  const lista = (contratos ?? []) as Contrato[]
 
-  const totalRecebido = pagamentos?.reduce((s, p) => s + Number(p.valor ?? 0), 0) ?? 0
+  const ativos   = lista.filter(c => contratoStatusDerivado(c.data_renovacao) === 'ativo').length
+  const vencendo = lista.filter(c => contratoStatusDerivado(c.data_renovacao) === 'vencendo').length
+  const recebido = (pagPagosMes ?? []).reduce((s, p) => s + Number(p.valor), 0)
+  const aReceber = (pagPendentes ?? []).reduce((s, p) => s + Number(p.valor), 0)
+
+  const alertaContrato = lista.find(c => {
+    if (!c.data_renovacao) return false
+    const diff = diasParaVencer(c.data_renovacao)
+    return diff >= 0 && diff <= (c.alerta_dias ?? 7)
+  }) ?? null
+
+  const vencendoLista = lista
+    .filter(c => c.data_renovacao && contratoStatusDerivado(c.data_renovacao) === 'vencendo')
+    .slice(0, 5)
+
+  const last6 = Array.from({ length: 6 }, (_, i) => {
+    const d = new Date(agora)
+    d.setMonth(d.getMonth() - (5 - i))
+    return {
+      mes: d.toLocaleString('pt-BR', { month: 'short' }),
+      key: d.toISOString().slice(0, 7),
+      valor: 0,
+    }
+  });
+  (receitaHist ?? []).forEach(p => {
+    if (!p.data_pagamento) return
+    const key = (p.data_pagamento as string).slice(0, 7)
+    const m = last6.find(x => x.key === key)
+    if (m) m.valor += Number(p.valor)
+  })
+  const maxValor = Math.max(...last6.map(m => m.valor), 1)
+
+  const primeiroNome = (user.email ?? '').split('@')[0]
 
   const kpis = [
-    { label: 'Total de contratos', value: String(totalContratos), icon: FileText,    color: '#7c3aed' },
-    { label: 'Valor fechado',       value: fmtMoeda(totalFechado), icon: DollarSign,  color: '#7c3aed' },
-    { label: 'Total recebido',      value: fmtMoeda(totalRecebido),icon: CheckCircle, color: '#16a34a' },
-    { label: 'Em andamento',        value: String(totalAtivos),    icon: Clock,       color: '#d97706' },
+    { label: 'Contratos ativos',  value: String(ativos),     sub: 'contratos vigentes' },
+    { label: 'Vencendo (30d)',    value: String(vencendo),   sub: 'renovar em breve' },
+    { label: 'Recebido este mês', value: fmtMoeda(recebido), sub: 'pagamentos confirmados' },
+    { label: 'A receber',         value: fmtMoeda(aReceber), sub: 'pagamentos pendentes' },
   ]
 
   return (
-    <div className="space-y-8 max-w-5xl">
-      <div className="flex items-center justify-between">
+    <div style={{ maxWidth: 960 }}>
+      {/* Cabeçalho */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 32 }}>
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: 'var(--fg)' }}>Dashboard</h1>
-          <p className="text-sm mt-0.5" style={{ color: 'var(--muted-fg)' }}>Visão geral dos seus contratos</p>
+          <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--fg)' }}>
+            Olá, {primeiroNome} 👋
+          </h1>
+          <p style={{ fontSize: 14, color: 'var(--muted-fg)', marginTop: 4 }}>
+            {vencendo > 0
+              ? `Você tem ${vencendo} contrato${vencendo > 1 ? 's' : ''} vencendo em 30 dias.`
+              : 'Todos os contratos estão em dia.'}
+          </p>
         </div>
-        <Link
-          href="/contratos/novo"
-          className="flex items-center gap-2 px-4 h-9 rounded-lg text-sm font-semibold transition-all"
-          style={{ background: 'var(--primary)', color: '#fff' }}
-        >
+        <Link href="/contratos/novo" style={{
+          padding: '9px 18px', borderRadius: 10, fontSize: 14, fontWeight: 700,
+          color: '#fff', background: 'var(--primary)', textDecoration: 'none',
+        }}>
           + Novo contrato
         </Link>
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {kpis.map(({ label, value, icon: Icon, color }) => (
-          <div key={label} className="rounded-xl p-5 border" style={{ background: '#fff', borderColor: 'var(--card-border)' }}>
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--muted-fg)' }}>{label}</span>
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${color}15` }}>
-                <Icon className="w-4 h-4" style={{ color }} />
-              </div>
-            </div>
-            <p className="text-2xl font-bold" style={{ color: 'var(--fg)' }}>{value}</p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
+        {kpis.map(k => (
+          <div key={k.label} style={{
+            padding: '20px', borderRadius: 13,
+            background: 'var(--surface)', border: '1px solid var(--card-border)',
+          }}>
+            <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted-fg)', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              {k.label}
+            </p>
+            <p style={{ fontSize: 24, fontWeight: 800, color: 'var(--fg)', lineHeight: 1 }}>
+              {k.value}
+            </p>
+            <p style={{ fontSize: 12, color: 'var(--faint)', marginTop: 6 }}>{k.sub}</p>
           </div>
         ))}
       </div>
 
-      {/* Contratos recentes */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-base font-semibold" style={{ color: 'var(--fg)' }}>Contratos recentes</h2>
-          <Link href="/contratos" className="text-sm font-medium" style={{ color: 'var(--primary)' }}>Ver todos →</Link>
-        </div>
-
-        {!contratos?.length ? (
-          <div className="rounded-xl border p-12 text-center" style={{ background: '#fff', borderColor: 'var(--card-border)' }}>
-            <FileText className="w-10 h-10 mx-auto mb-3" style={{ color: 'var(--muted-fg)' }} />
-            <p className="font-medium" style={{ color: 'var(--fg)' }}>Nenhum contrato ainda</p>
-            <p className="text-sm mt-1" style={{ color: 'var(--muted-fg)' }}>Crie seu primeiro contrato para começar</p>
-            <Link
-              href="/contratos/novo"
-              className="inline-flex items-center mt-4 px-4 h-9 rounded-lg text-sm font-semibold"
-              style={{ background: 'var(--primary)', color: '#fff' }}
-            >
-              + Novo contrato
+      {/* Banner de alerta */}
+      {alertaContrato && (() => {
+        const diff = diasParaVencer(alertaContrato.data_renovacao!)
+        return (
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '14px 20px', borderRadius: 12, marginBottom: 24,
+            background: 'var(--warning-banner)', border: '1px solid #F5D9A8',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span style={{ fontSize: 18 }}>⚠️</span>
+              <div>
+                <p style={{ fontSize: 14, fontWeight: 700, color: '#7A4E0D' }}>
+                  {alertaContrato.cliente_nome} vence em {diff} dia{diff !== 1 ? 's' : ''}
+                </p>
+                <p style={{ fontSize: 12, color: '#9A6B12' }}>
+                  {alertaContrato.tipo ?? alertaContrato.titulo} · {fmtData(alertaContrato.data_renovacao!)}
+                </p>
+              </div>
+            </div>
+            <Link href={`/contratos/${alertaContrato.id}/editar`} style={{
+              padding: '7px 16px', borderRadius: 8, fontSize: 13, fontWeight: 700,
+              color: '#fff', background: '#D98A1F', textDecoration: 'none',
+            }}>
+              Renovar
             </Link>
           </div>
-        ) : (
-          <div className="rounded-xl border overflow-hidden" style={{ background: '#fff', borderColor: 'var(--card-border)' }}>
-            <table className="w-full text-sm">
-              <thead>
-                <tr style={{ borderBottom: '1px solid var(--border)', background: '#faf8ff' }}>
-                  {['Cliente', 'Serviço', 'Valor', 'Data evento', 'Status'].map(h => (
-                    <th key={h} className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--muted-fg)' }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {contratos.map((c, i) => (
-                  <tr key={c.id} style={{ borderBottom: i < contratos.length - 1 ? '1px solid var(--border)' : 'none' }}>
-                    <td className="px-4 py-3 font-medium" style={{ color: 'var(--fg)' }}>
-                      <Link href={`/contratos/${c.id}`} className="hover:underline">{c.cliente_nome}</Link>
-                    </td>
-                    <td className="px-4 py-3" style={{ color: 'var(--muted-fg)' }}>{c.titulo}</td>
-                    <td className="px-4 py-3 font-semibold" style={{ color: 'var(--fg)' }}>{fmtMoeda(Number(c.valor_total))}</td>
-                    <td className="px-4 py-3" style={{ color: 'var(--muted-fg)' }}>{c.data_evento ? fmtData(c.data_evento) : '—'}</td>
-                    <td className="px-4 py-3">
-                      <span className="px-2.5 py-1 rounded-full text-xs font-semibold" style={{ background: `${STATUS_COLOR[c.status] ?? '#9ca3af'}18`, color: STATUS_COLOR[c.status] ?? '#9ca3af' }}>
-                        {STATUS_LABEL[c.status] ?? c.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        )
+      })()}
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 20 }}>
+        {/* Vencendo em breve */}
+        <div style={{
+          background: 'var(--surface)', borderRadius: 13,
+          border: '1px solid var(--card-border)',
+        }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '18px 20px', borderBottom: '1px solid var(--card-border)',
+          }}>
+            <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--fg)' }}>Vencendo em breve</p>
+            <Link href="/contratos" style={{ fontSize: 13, color: 'var(--primary)', textDecoration: 'none', fontWeight: 600 }}>
+              Ver todos →
+            </Link>
           </div>
-        )}
+
+          {!vencendoLista.length ? (
+            <div style={{ padding: '32px 20px', textAlign: 'center' }}>
+              <p style={{ fontSize: 14, color: 'var(--muted-fg)' }}>Nenhum contrato vencendo nos próximos 30 dias ✓</p>
+            </div>
+          ) : (
+            vencendoLista.map((c, i) => {
+              const diff = c.data_renovacao ? diasParaVencer(c.data_renovacao) : null
+              const st   = contratoStatusDerivado(c.data_renovacao)
+              const av   = STATUS_AVATAR[st]
+              const chip = STATUS_CHIP[st]
+              return (
+                <Link key={c.id} href={`/contratos/${c.id}`} style={{
+                  display: 'flex', alignItems: 'center', gap: 14,
+                  padding: '14px 20px', textDecoration: 'none',
+                  borderBottom: i < vencendoLista.length - 1 ? '1px solid var(--card-border)' : 'none',
+                }}>
+                  <div style={{
+                    width: 38, height: 38, borderRadius: 10, flexShrink: 0,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: av.bg, color: av.color, fontSize: 12, fontWeight: 700,
+                  }}>
+                    {getInitials(c.cliente_nome)}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {c.cliente_nome}
+                    </p>
+                    <p style={{ fontSize: 12, color: 'var(--muted-fg)' }}>
+                      {c.tipo ?? c.titulo}
+                      {c.periodicidade === 'mensal'
+                        ? ` · ${fmtMoeda(Number(c.valor_total))}/mês`
+                        : ` · ${fmtMoeda(Number(c.valor_total))}`}
+                    </p>
+                  </div>
+                  <span style={{
+                    padding: '4px 10px', borderRadius: 20, fontSize: 12, fontWeight: 700,
+                    background: chip.bg, color: chip.color, whiteSpace: 'nowrap', flexShrink: 0,
+                  }}>
+                    {diff !== null ? `${diff}d` : '—'}
+                  </span>
+                </Link>
+              )
+            })
+          )}
+        </div>
+
+        {/* Gráfico de receita */}
+        <div style={{
+          background: 'var(--surface)', borderRadius: 13,
+          border: '1px solid var(--card-border)', padding: 20,
+          display: 'flex', flexDirection: 'column',
+        }}>
+          <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--fg)', marginBottom: 20 }}>Receita por mês</p>
+          <div style={{ flex: 1, display: 'flex', alignItems: 'flex-end', gap: 8, height: 120, marginBottom: 12 }}>
+            {last6.map((m, i) => {
+              const h = m.valor > 0 ? Math.max(8, Math.round((m.valor / maxValor) * 100)) : 4
+              const isLast = i === 5
+              return (
+                <div key={m.key} style={{
+                  flex: 1, display: 'flex', flexDirection: 'column',
+                  alignItems: 'center', justifyContent: 'flex-end', height: '100%', gap: 6,
+                }}>
+                  <div title={fmtMoeda(m.valor)} style={{
+                    width: '100%', height: `${h}%`, minHeight: 4,
+                    borderRadius: '6px 6px 3px 3px',
+                    background: isLast ? 'var(--primary)' : (i >= 3 ? '#A8D9C0' : '#D4ECDF'),
+                  }} />
+                  <span style={{
+                    fontSize: 10, fontWeight: isLast ? 700 : 400,
+                    color: isLast ? 'var(--fg)' : 'var(--faint)',
+                  }}>
+                    {m.mes}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+          <div style={{ paddingTop: 12, borderTop: '1px solid var(--card-border)' }}>
+            <p style={{ fontSize: 11, color: 'var(--muted-fg)' }}>Este mês</p>
+            <p style={{ fontSize: 20, fontWeight: 800, color: 'var(--fg)', marginTop: 2 }}>
+              {fmtMoeda(last6[5].valor)}
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   )

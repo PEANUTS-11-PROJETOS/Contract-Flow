@@ -1,5 +1,215 @@
-import { redirect } from 'next/navigation'
+import Link from 'next/link'
 
-export default function Home() {
-  redirect('/login')
+function Logo() {
+  return (
+    <div className="flex items-center gap-2.5">
+      <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+        style={{ background: 'var(--primary)' }}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+          stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <path d="M14 2v6h6"/>
+          <path d="M9 13l2 2 4-4"/>
+        </svg>
+      </div>
+      <span className="font-bold text-base" style={{ color: 'var(--fg)' }}>ContractFlow</span>
+    </div>
+  )
+}
+
+export default function LandingPage() {
+  return (
+    <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
+      {/* Nav */}
+      <nav style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '0 40px', height: 64,
+        borderBottom: '1px solid var(--card-border)', background: 'var(--bg)',
+        position: 'sticky', top: 0, zIndex: 50,
+      }}>
+        <Logo />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
+          <div style={{ display: 'flex', gap: 24, fontSize: 14, color: 'var(--muted-fg)' }}>
+            <a href="#recursos" style={{ color: 'inherit', textDecoration: 'none' }}>Recursos</a>
+            <a href="#precos" style={{ color: 'inherit', textDecoration: 'none' }}>Preços</a>
+          </div>
+          <div style={{ display: 'flex', gap: 12 }}>
+            <Link href="/login" style={{
+              padding: '8px 16px', borderRadius: 9, fontSize: 14, fontWeight: 600,
+              color: 'var(--fg)', border: '1px solid var(--border)', textDecoration: 'none',
+              background: 'var(--surface)',
+            }}>
+              Entrar
+            </Link>
+            <Link href="/signup" style={{
+              padding: '8px 20px', borderRadius: 9, fontSize: 14, fontWeight: 600,
+              color: '#fff', background: 'var(--primary)', textDecoration: 'none',
+            }}>
+              Começar grátis
+            </Link>
+          </div>
+        </div>
+      </nav>
+
+      {/* Hero */}
+      <section style={{ maxWidth: 1080, margin: '0 auto', padding: '80px 40px 60px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64, alignItems: 'center' }}>
+          <div>
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              padding: '6px 14px', borderRadius: 20,
+              background: 'var(--primary-light)', color: 'var(--primary-700)',
+              fontSize: 13, fontWeight: 600, marginBottom: 24,
+            }}>
+              <span>📋</span> Feito para o MEI brasileiro
+            </div>
+            <h1 style={{
+              fontSize: 42, fontWeight: 800, lineHeight: 1.15,
+              color: 'var(--fg)', marginBottom: 20,
+            }}>
+              Seus contratos<br />sob controle,<br />sem dor de cabeça
+            </h1>
+            <p style={{ fontSize: 16, color: 'var(--muted-fg)', lineHeight: 1.7, marginBottom: 32 }}>
+              Crie, envie e acompanhe contratos em minutos. Receba alertas antes do
+              vencimento e nunca perca uma renovação novamente.
+            </p>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 20 }}>
+              <Link href="/signup" style={{
+                padding: '12px 28px', borderRadius: 11, fontSize: 15, fontWeight: 700,
+                color: '#fff', background: 'var(--primary)', textDecoration: 'none',
+              }}>
+                Começar grátis
+              </Link>
+              <Link href="/login" style={{
+                padding: '12px 20px', borderRadius: 11, fontSize: 15, fontWeight: 600,
+                color: 'var(--fg)', textDecoration: 'none',
+              }}>
+                Entrar →
+              </Link>
+            </div>
+            <div style={{ display: 'flex', gap: 20, fontSize: 13, color: 'var(--muted-fg)' }}>
+              <span>✓ Sem cartão de crédito</span>
+              <span>✓ Pronto em 2 minutos</span>
+            </div>
+          </div>
+
+          {/* App preview card */}
+          <div style={{
+            background: 'var(--surface)', borderRadius: 16,
+            border: '1px solid var(--card-border)',
+            boxShadow: '0 8px 40px rgba(22,36,31,0.08)', overflow: 'hidden',
+          }}>
+            <div style={{
+              padding: '20px 24px', borderBottom: '1px solid var(--card-border)',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            }}>
+              <div>
+                <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--fg)' }}>Olá, Marina 👋</p>
+                <p style={{ fontSize: 12, color: 'var(--muted-fg)', marginTop: 2 }}>3 contratos vencendo este mês.</p>
+              </div>
+              <div style={{
+                padding: '6px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700,
+                color: '#fff', background: 'var(--primary)',
+              }}>
+                + Novo
+              </div>
+            </div>
+            <div style={{ padding: '16px 24px', display: 'flex', gap: 12 }}>
+              {[
+                { n: '12', l: 'Ativos', bg: '#E7F5EE', c: '#11704E' },
+                { n: '3', l: 'Vencendo', bg: '#F7E8C8', c: '#9A6B12' },
+              ].map(k => (
+                <div key={k.l} style={{ flex: 1, padding: '14px 16px', borderRadius: 10, background: k.bg }}>
+                  <p style={{ fontSize: 22, fontWeight: 800, color: k.c }}>{k.n}</p>
+                  <p style={{ fontSize: 12, color: k.c, marginTop: 2 }}>{k.l}</p>
+                </div>
+              ))}
+            </div>
+            <div style={{ padding: '0 24px 20px' }}>
+              {[
+                { nome: 'Studio Bloom', tipo: 'Social media', dias: '5d', vencendo: true },
+                { nome: 'Café Loja Norte', tipo: 'Consultoria', dias: '22d', vencendo: true },
+                { nome: 'Tech Startup XP', tipo: 'Prestação de serviço', dias: '65d', vencendo: false },
+              ].map((c, i) => {
+                const bg = c.vencendo ? '#F7E8C8' : '#E7F5EE'
+                const co = c.vencendo ? '#9A6B12' : '#11704E'
+                return (
+                  <div key={i} style={{
+                    display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0',
+                    borderBottom: i < 2 ? '1px solid var(--card-border)' : 'none',
+                  }}>
+                    <div style={{
+                      width: 32, height: 32, borderRadius: 8, flexShrink: 0,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      background: bg, color: co, fontSize: 11, fontWeight: 700,
+                    }}>
+                      {c.nome.split(' ').slice(0, 2).map(w => w[0]).join('')}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.nome}</p>
+                      <p style={{ fontSize: 11, color: 'var(--muted-fg)' }}>{c.tipo}</p>
+                    </div>
+                    <span style={{ padding: '3px 8px', borderRadius: 20, fontSize: 11, fontWeight: 700, background: bg, color: co }}>
+                      {c.dias}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features */}
+      <section id="recursos" style={{ maxWidth: 1080, margin: '0 auto', padding: '20px 40px 80px' }}>
+        <h2 style={{ fontSize: 28, fontWeight: 800, color: 'var(--fg)', textAlign: 'center', marginBottom: 48 }}>
+          Tudo que você precisa para gerir contratos
+        </h2>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
+          {[
+            {
+              icon: '🔔',
+              title: 'Alertas de vencimento',
+              desc: 'Receba notificações antes do contrato vencer e nunca perca uma renovação.',
+            },
+            {
+              icon: '💰',
+              title: 'Controle de pagamentos',
+              desc: 'Registre recebimentos, acompanhe o que está pendente e veja o fluxo mensal.',
+            },
+            {
+              icon: '📄',
+              title: 'Modelos prontos',
+              desc: 'Use modelos de contrato para prestação de serviço, consultoria e Social media.',
+            },
+          ].map(f => (
+            <div key={f.title} style={{
+              padding: '28px 24px', borderRadius: 14,
+              background: 'var(--surface)', border: '1px solid var(--card-border)',
+            }}>
+              <div style={{
+                width: 44, height: 44, borderRadius: 11, marginBottom: 16,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: 'var(--primary-light)', fontSize: 20,
+              }}>
+                {f.icon}
+              </div>
+              <p style={{ fontSize: 16, fontWeight: 700, color: 'var(--fg)', marginBottom: 8 }}>{f.title}</p>
+              <p style={{ fontSize: 14, color: 'var(--muted-fg)', lineHeight: 1.6 }}>{f.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer style={{
+        borderTop: '1px solid var(--card-border)', padding: '24px 40px',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        fontSize: 13, color: 'var(--muted-fg)',
+      }}>
+        <Logo />
+        <p>© 2026 ContractFlow · Todos os direitos reservados</p>
+      </footer>
+    </div>
+  )
 }

@@ -9,9 +9,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (!user) redirect('/login')
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: '#f8f7ff' }}>
-      <Sidebar />
-      <main className="flex-1 overflow-y-auto p-8">
+    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--bg)' }}>
+      <Sidebar email={user.email ?? ''} />
+      <main style={{ flex: 1, overflowY: 'auto', padding: '32px 40px' }}>
         {children}
       </main>
       <Toaster richColors position="top-right" />
