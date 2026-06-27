@@ -42,7 +42,11 @@ export async function POST(req: Request) {
     const sub        = event.data.object as Stripe.Subscription
     const customerId = sub.customer as string
     const ativo      = sub.status === 'active'
-    const expires    = new Date(sub.current_period_end * 1000).toISOString()
+    // current_period_end pode estar em níveis diferentes dependendo da versão da API
+    const periodEnd  = (sub as unknown as { current_period_end?: number }).current_period_end
+    const expires    = periodEnd
+      ? new Date(periodEnd * 1000).toISOString()
+      : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
 
     await admin.from('profiles')
       .update({
