@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Search, ChevronRight, FileText } from 'lucide-react'
 import {
   fmtMoeda, getInitials,
@@ -26,6 +27,7 @@ const FILTROS: { value: '' | StatusDerivado; label: string }[] = [
 ]
 
 export function ContratosLista({ contratos }: { contratos: Contrato[] }) {
+  const router = useRouter()
   const [busca,  setBusca]  = useState('')
   const [filtro, setFiltro] = useState<'' | StatusDerivado>('')
 
@@ -121,7 +123,10 @@ export function ContratosLista({ contratos }: { contratos: Contrato[] }) {
                 padding: '14px 20px', textDecoration: 'none',
                 borderBottom: i < filtrados.length - 1 ? '1px solid var(--card-border)' : 'none',
               }}
-                onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-muted)')}
+                onMouseEnter={e => {
+                  e.currentTarget.style.background = 'var(--surface-muted)'
+                  router.prefetch(`/contratos/${c.id}`)
+                }}
                 onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
               >
                 {/* Avatar */}
