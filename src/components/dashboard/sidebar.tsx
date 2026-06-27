@@ -2,7 +2,7 @@
 import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
-import { LogOut, LayoutDashboard, FileText, Users, CreditCard, BookOpen, ShieldCheck } from 'lucide-react'
+import { LogOut, LayoutDashboard, FileText, Users, CreditCard, BookOpen, ShieldCheck, FileBarChart } from 'lucide-react'
 
 const ADMIN_EMAIL = 'soaresvinicius11112@gmail.com'
 
@@ -11,7 +11,8 @@ const nav = [
   { href: '/contratos',   label: 'Contratos',    icon: FileText },
   { href: '/clientes',    label: 'Clientes',     icon: Users },
   { href: '/pagamentos',  label: 'Pagamentos',   icon: CreditCard },
-  { href: '/modelos',     label: 'Modelos',      icon: BookOpen },
+  { href: '/modelos',    label: 'Modelos',    icon: BookOpen },
+  { href: '/relatorio', label: 'Relatório',  icon: FileBarChart },
 ]
 
 function getInitials(email: string) {

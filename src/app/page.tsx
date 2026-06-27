@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { BotaoAssinar } from '@/components/marketing/BotaoAssinar'
 
 function Logo() {
   return (
@@ -274,20 +275,14 @@ export default function LandingPage() {
               <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.75)', marginBottom: 6 }}>,90/mês</span>
             </div>
             <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)', marginBottom: 28 }}>Para MEIs em crescimento</p>
-            <Link href="/signup" style={{
-              display: 'block', textAlign: 'center',
-              padding: '11px 0', borderRadius: 10, fontSize: 14, fontWeight: 700,
-              color: 'var(--primary)', background: '#fff', textDecoration: 'none', marginBottom: 28,
-            }}>
-              Assinar agora
-            </Link>
+            <BotaoAssinar />
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {[
                 'Contratos ilimitados',
                 'Alertas personalizáveis',
                 'Relatório mensal PDF',
                 'Modelos editáveis',
-                'Suporte por email',
+                'Suporte via WhatsApp',
                 '1 usuário',
               ].map(f => (
                 <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
