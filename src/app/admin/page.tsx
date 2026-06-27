@@ -26,17 +26,28 @@ export default async function AdminPage() {
     admin.from('pagamentos').select('valor, status'),
   ])
 
-  const profileMap   = new Map((profiles ?? []).map(p => [p.id, p]))
-  const totalPro     = (profiles ?? []).filter(p => p.plano === 'pro').length
-  const receitaTotal = (pagamentos ?? []).filter(p => p.status === 'pago').reduce((s, p) => s + Number(p.valor), 0)
-  const pendente     = (pagamentos ?? []).filter(p => p.status === 'pendente').reduce((s, p) => s + Number(p.valor), 0)
+  const profileMap = new Map((profiles ?? []).map(p => [p.id, p]))
+
+  // Excluir admin de todos os cálculos
+  const adminId       = (users ?? []).find(u => u.email === ADMIN_EMAIL)?.id
+  const usersClientes = (users ?? []).filter(u => u.email !== ADMIN_EMAIL)
+  const contratosClientes = (contratos ?? []).filter(c => c.user_id !== adminId)
+  const pagamentosClientes = (pagamentos ?? []).filter(p => {
+    // pagamentos não tem user_id direto, mas filtramos via contratos
+    const contrato = (contratos ?? []).find(c => c.id === (p as Record<string,unknown>).contrato_id)
+    return contrato ? contrato.user_id !== adminId : true
+  })
+
+  const totalPro     = (profiles ?? []).filter(p => p.id !== adminId && p.plano === 'pro').length
+  const receitaTotal = pagamentosClientes.filter(p => p.status === 'pago').reduce((s, p) => s + Number(p.valor), 0)
+  const pendente     = pagamentosClientes.filter(p => p.status === 'pendente').reduce((s, p) => s + Number(p.valor), 0)
 
   const contratosCount = new Map<string, number>()
-  for (const c of (contratos ?? [])) {
+  for (const c of contratosClientes) {
     contratosCount.set(c.user_id, (contratosCount.get(c.user_id) ?? 0) + 1)
   }
 
-  const usuariosLista = (users ?? []).map(u => ({
+  const usuariosLista = usersClientes.map(u => ({
     id:        u.id,
     email:     u.email ?? '—',
     createdAt: u.created_at as string,
@@ -45,11 +56,11 @@ export default async function AdminPage() {
   })).sort((a, b) => b.contratos - a.contratos)
 
   const kpis = [
-    { label: 'Usuários',         value: String(users?.length ?? 0), icon: '👥' },
-    { label: 'Plano Pro',        value: String(totalPro),           icon: '⚡' },
-    { label: 'Contratos',        value: String(contratos?.length ?? 0), icon: '📄' },
-    { label: 'Receita recebida', value: fmtMoeda(receitaTotal),     icon: '💰' },
-    { label: 'A receber',        value: fmtMoeda(pendente),         icon: '⏳' },
+    { label: 'Usuários',         value: String(usersClientes.length),        icon: '👥' },
+    { label: 'Plano Pro',        value: String(totalPro),                    icon: '⚡' },
+    { label: 'Contratos',        value: String(contratosClientes.length),    icon: '📄' },
+    { label: 'Receita recebida', value: fmtMoeda(receitaTotal),              icon: '💰' },
+    { label: 'A receber',        value: fmtMoeda(pendente),                  icon: '⏳' },
   ]
 
   return (
@@ -223,9 +234,9 @@ export default async function AdminPage() {
           <div style={{ padding: '18px 24px', borderBottom: '1px solid #1F2937' }}>
             <p style={{ fontSize: 15, fontWeight: 700, color: '#F9FAFB' }}>Contratos recentes</p>
           </div>
-          {(contratos ?? []).length === 0 ? (
+          {contratosClientes.length === 0 ? (
             <p style={{ padding: '32px 24px', color: '#6B7280', fontSize: 14 }}>Nenhum contrato.</p>
-          ) : (contratos ?? []).slice(0, 10).map((c, i, arr) => (
+          ) : contratosClientes.slice(0, 10).map((c, i, arr) => (
             <div key={c.id} style={{
               padding: '12px 24px',
               borderBottom: i < arr.length - 1 ? '1px solid #1F2937' : 'none',
