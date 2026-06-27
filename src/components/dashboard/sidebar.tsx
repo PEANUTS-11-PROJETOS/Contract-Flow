@@ -2,7 +2,9 @@
 import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
-import { LogOut, LayoutDashboard, FileText, Users, CreditCard, BookOpen } from 'lucide-react'
+import { LogOut, LayoutDashboard, FileText, Users, CreditCard, BookOpen, ShieldCheck } from 'lucide-react'
+
+const ADMIN_EMAIL = 'soaresvinicius11112@gmail.com'
 
 const nav = [
   { href: '/dashboard',   label: 'Painel',       icon: LayoutDashboard },
@@ -86,6 +88,33 @@ export function Sidebar({ email }: { email: string }) {
             </Link>
           )
         })}
+
+        {/* Admin link — só aparece para o admin */}
+        {email === ADMIN_EMAIL && (
+          <>
+            <div style={{ margin: '8px 12px 4px', height: 1, background: 'var(--sidebar-border)' }} />
+            <Link
+              href="/admin"
+              style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                padding: '9px 12px', borderRadius: 9, textDecoration: 'none',
+                fontSize: 14, fontWeight: pathname === '/admin' ? 600 : 500,
+                background: pathname === '/admin' ? '#7C3AED' : 'transparent',
+                color: pathname === '/admin' ? '#fff' : '#7C3AED',
+                transition: 'background 0.12s, color 0.12s',
+              }}
+              onMouseEnter={e => {
+                if (pathname !== '/admin') e.currentTarget.style.background = 'rgba(124,58,237,0.1)'
+              }}
+              onMouseLeave={e => {
+                if (pathname !== '/admin') e.currentTarget.style.background = 'transparent'
+              }}
+            >
+              <ShieldCheck size={16} style={{ flexShrink: 0 }} />
+              Admin
+            </Link>
+          </>
+        )}
       </nav>
 
       {/* User card */}

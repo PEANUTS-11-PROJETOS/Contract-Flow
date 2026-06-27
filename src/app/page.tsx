@@ -201,6 +201,109 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Preços */}
+      <section id="precos" style={{ maxWidth: 1080, margin: '0 auto', padding: '20px 40px 100px' }}>
+        <div style={{ textAlign: 'center', marginBottom: 56 }}>
+          <h2 style={{ fontSize: 28, fontWeight: 800, color: 'var(--fg)', marginBottom: 12 }}>
+            Planos simples e transparentes
+          </h2>
+          <p style={{ fontSize: 16, color: 'var(--muted-fg)' }}>
+            Comece grátis. Faça upgrade quando precisar de mais.
+          </p>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, maxWidth: 760, margin: '0 auto', alignItems: 'start' }}>
+          {/* Gratuito */}
+          <div style={{
+            padding: '32px 28px', borderRadius: 16,
+            background: 'var(--surface)', border: '1px solid var(--card-border)',
+          }}>
+            <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--muted-fg)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>Gratuito</p>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, marginBottom: 6 }}>
+              <span style={{ fontSize: 36, fontWeight: 800, color: 'var(--fg)' }}>R$ 0</span>
+              <span style={{ fontSize: 14, color: 'var(--muted-fg)', marginBottom: 6 }}>/mês</span>
+            </div>
+            <p style={{ fontSize: 13, color: 'var(--muted-fg)', marginBottom: 6 }}>15 dias com tudo liberado</p>
+            <div style={{
+              display: 'inline-flex', padding: '3px 10px', borderRadius: 20,
+              background: 'var(--primary-light)', marginBottom: 20,
+            }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--primary-700)' }}>✓ Trial de 15 dias grátis</span>
+            </div>
+            <Link href="/signup" style={{
+              display: 'block', textAlign: 'center',
+              padding: '11px 0', borderRadius: 10, fontSize: 14, fontWeight: 700,
+              color: 'var(--fg)', border: '1.5px solid var(--border)', textDecoration: 'none',
+              background: 'var(--surface)', marginBottom: 28,
+            }}>
+              Criar conta grátis
+            </Link>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {[
+                'Até 5 contratos',
+                'Alertas de vencimento',
+                'Controle de pagamentos',
+                'Modelos prontos',
+                '1 usuário',
+              ].map(f => (
+                <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ color: 'var(--primary)', fontSize: 15, flexShrink: 0 }}>✓</span>
+                  <span style={{ fontSize: 14, color: 'var(--muted-fg)' }}>{f}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Pro — destaque */}
+          <div style={{
+            padding: '32px 28px', borderRadius: 16,
+            background: 'var(--primary)', border: '1px solid var(--primary)',
+            position: 'relative',
+          }}>
+            <div style={{
+              position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)',
+              background: '#F7D070', color: '#7A4E0D',
+              padding: '4px 14px', borderRadius: 20, fontSize: 12, fontWeight: 700,
+              whiteSpace: 'nowrap',
+            }}>
+              Mais popular
+            </div>
+            <p style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.75)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>Pro</p>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, marginBottom: 6 }}>
+              <span style={{ fontSize: 36, fontWeight: 800, color: '#fff' }}>R$ 29</span>
+              <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.75)', marginBottom: 6 }}>,90/mês</span>
+            </div>
+            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)', marginBottom: 28 }}>Para MEIs em crescimento</p>
+            <Link href="/signup" style={{
+              display: 'block', textAlign: 'center',
+              padding: '11px 0', borderRadius: 10, fontSize: 14, fontWeight: 700,
+              color: 'var(--primary)', background: '#fff', textDecoration: 'none', marginBottom: 28,
+            }}>
+              Assinar agora
+            </Link>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {[
+                'Contratos ilimitados',
+                'Alertas personalizáveis',
+                'Relatório mensal PDF',
+                'Modelos editáveis',
+                'Suporte por email',
+                '1 usuário',
+              ].map(f => (
+                <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ color: '#A8DFC4', fontSize: 15, flexShrink: 0 }}>✓</span>
+                  <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.9)' }}>{f}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <p style={{ textAlign: 'center', fontSize: 13, color: 'var(--faint)', marginTop: 32 }}>
+          Todos os planos incluem SSL, backups automáticos e suporte à LGPD.
+        </p>
+      </section>
+
       {/* Footer */}
       <footer style={{
         borderTop: '1px solid var(--card-border)', padding: '24px 40px',
