@@ -33,21 +33,30 @@ function onBlur(e: React.FocusEvent<HTMLInputElement | HTMLSelectElement | HTMLT
   e.target.style.borderColor = 'var(--input-border)'
 }
 
+function addMonths(dateStr: string, months: number): string {
+  const d = new Date(dateStr + 'T12:00:00')
+  d.setMonth(d.getMonth() + months)
+  return d.toISOString().slice(0, 10)
+}
+
 export function NovoContratoForm({ tipoInicial }: { tipoInicial: string }) {
   const router  = useRouter()
   const [loading, setLoading] = useState(false)
+  const [parcelado, setParcelado] = useState(false)
   const [form, setForm] = useState({
-    tipo:             tipoInicial,
-    valor_total:      '',
-    periodicidade:    'mensal',
-    data_inicio:      '',
-    data_renovacao:   '',
-    alerta_dias:      '7',
-    cliente_nome:     '',
-    cliente_email:    '',
-    cliente_telefone: '',
-    cliente_documento:'',
-    observacoes:      '',
+    tipo:                tipoInicial,
+    valor_total:         '',
+    periodicidade:       'mensal',
+    data_inicio:         '',
+    data_renovacao:      '',
+    alerta_dias:         '7',
+    cliente_nome:        '',
+    cliente_email:       '',
+    cliente_telefone:    '',
+    cliente_documento:   '',
+    observacoes:         '',
+    num_parcelas:        '2',
+    data_primeira_parcela: '',
   })
 
   function set(field: string, value: string) {
@@ -58,14 +67,19 @@ export function NovoContratoForm({ tipoInicial }: { tipoInicial: string }) {
     e.preventDefault()
     if (!form.cliente_nome.trim()) { toast.error('Informe o nome do cliente.'); return }
     if (!form.valor_total)         { toast.error('Informe o valor do contrato.'); return }
+    if (parcelado && !form.data_primeira_parcela) {
+      toast.error('Informe a data do vencimento da primeira parcela.'); return
+    }
+
     setLoading(true)
 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push('/login'); return }
 
     const valor = Number(form.valor_total.replace(/\./g, '').replace(',', '.')) || 0
+    const n     = parcelado ? (parseInt(form.num_parcelas) || 2) : 1
 
-    const { error } = await supabase.from('contratos').insert({
+    const { data: contratoData, error } = await supabase.from('contratos').insert({
       user_id:           user.id,
       titulo:            form.tipo,
       tipo:              form.tipo,
@@ -80,12 +94,31 @@ export function NovoContratoForm({ tipoInicial }: { tipoInicial: string }) {
       alerta_dias:       parseInt(form.alerta_dias) || 7,
       observacoes:       form.observacoes       || null,
       status:            'ativo',
-    })
+    }).select('id').single()
+
+    if (error || !contratoData) {
+      setLoading(false)
+      toast.error('Erro ao salvar contrato.')
+      return
+    }
+
+    // Criar parcelas automaticamente
+    if (parcelado && form.data_primeira_parcela) {
+      const valorParcela = parseFloat((valor / n).toFixed(2))
+      const parcelas = Array.from({ length: n }, (_, i) => ({
+        user_id:         user.id,
+        contrato_id:     contratoData.id,
+        descricao:       `Parcela ${i + 1}/${n}`,
+        valor:           valorParcela,
+        status:          'pendente',
+        data_vencimento: addMonths(form.data_primeira_parcela, i),
+      }))
+      await supabase.from('pagamentos').insert(parcelas)
+    }
 
     setLoading(false)
-    if (error) { toast.error('Erro ao salvar contrato.'); return }
     toast.success('Contrato criado com sucesso!')
-    router.push('/contratos')
+    router.push(`/contratos/${contratoData.id}`)
   }
 
   const cardStyle: React.CSSProperties = {
@@ -93,6 +126,10 @@ export function NovoContratoForm({ tipoInicial }: { tipoInicial: string }) {
     border: '1px solid var(--card-border)', padding: 20,
     display: 'flex', flexDirection: 'column', gap: 16,
   }
+
+  const valorNum = Number(form.valor_total.replace(/\./g, '').replace(',', '.')) || 0
+  const n        = parseInt(form.num_parcelas) || 2
+  const parcela  = parcelado && n > 0 ? valorNum / n : 0
 
   return (
     <div style={{ maxWidth: 640 }}>
@@ -109,6 +146,7 @@ export function NovoContratoForm({ tipoInicial }: { tipoInicial: string }) {
       </div>
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        {/* Tipo */}
         <div style={cardStyle}>
           <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted-fg)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Tipo de contrato</p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
@@ -125,10 +163,11 @@ export function NovoContratoForm({ tipoInicial }: { tipoInicial: string }) {
           </div>
         </div>
 
+        {/* Contrato */}
         <div style={cardStyle}>
           <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted-fg)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Contrato</p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-            <Field label="Valor (R$)" required>
+            <Field label="Valor total (R$)" required>
               <input style={inputBase} value={form.valor_total} onChange={e => set('valor_total', e.target.value)} placeholder="0,00" inputMode="decimal" onFocus={onFocus} onBlur={onBlur} />
             </Field>
             <Field label="Periodicidade">
@@ -144,6 +183,7 @@ export function NovoContratoForm({ tipoInicial }: { tipoInicial: string }) {
               <input type="date" style={inputBase} value={form.data_renovacao} onChange={e => set('data_renovacao', e.target.value)} onFocus={onFocus} onBlur={onBlur} />
             </Field>
           </div>
+
           <Field label="Alerta de vencimento">
             <select style={inputBase} value={form.alerta_dias} onChange={e => set('alerta_dias', e.target.value)} onFocus={onFocus} onBlur={onBlur}>
               <option value="3">3 dias antes</option>
@@ -152,8 +192,73 @@ export function NovoContratoForm({ tipoInicial }: { tipoInicial: string }) {
               <option value="30">30 dias antes</option>
             </select>
           </Field>
+
+          {/* Toggle parcelamento */}
+          <div style={{
+            borderTop: '1px solid var(--card-border)', paddingTop: 16,
+            display: 'flex', flexDirection: 'column', gap: 14,
+          }}>
+            <button
+              type="button"
+              onClick={() => setParcelado(p => !p)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+              }}
+            >
+              <div style={{
+                width: 38, height: 22, borderRadius: 11, position: 'relative',
+                background: parcelado ? 'var(--primary)' : 'var(--border)',
+                transition: 'background 0.2s',
+              }}>
+                <div style={{
+                  position: 'absolute', top: 3, left: parcelado ? 19 : 3,
+                  width: 16, height: 16, borderRadius: '50%', background: '#fff',
+                  transition: 'left 0.2s',
+                }} />
+              </div>
+              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg)' }}>
+                Recebimento parcelado
+              </span>
+            </button>
+
+            {parcelado && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                  <Field label="Número de parcelas">
+                    <input
+                      type="number" min={2} max={60}
+                      style={inputBase}
+                      value={form.num_parcelas}
+                      onChange={e => set('num_parcelas', e.target.value)}
+                      onFocus={onFocus} onBlur={onBlur}
+                    />
+                  </Field>
+                  <Field label="Vencimento da 1ª parcela" required>
+                    <input
+                      type="date"
+                      style={inputBase}
+                      value={form.data_primeira_parcela}
+                      onChange={e => set('data_primeira_parcela', e.target.value)}
+                      onFocus={onFocus} onBlur={onBlur}
+                    />
+                  </Field>
+                </div>
+                {valorNum > 0 && n > 1 && (
+                  <div style={{
+                    padding: '10px 14px', borderRadius: 9,
+                    background: 'var(--primary-light)', border: '1px solid var(--primary-tint)',
+                    fontSize: 13, color: 'var(--primary-700)', fontWeight: 600,
+                  }}>
+                    {n}x de R$ {parcela.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} · mensais
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
+        {/* Cliente */}
         <div style={cardStyle}>
           <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted-fg)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Cliente</p>
           <Field label="Nome" required>
@@ -169,6 +274,7 @@ export function NovoContratoForm({ tipoInicial }: { tipoInicial: string }) {
           </div>
         </div>
 
+        {/* Observações */}
         <div style={cardStyle}>
           <Field label="Observações">
             <textarea style={{ ...inputBase, height: 'auto', padding: '10px 14px', resize: 'none' }} rows={3} value={form.observacoes} onChange={e => set('observacoes', e.target.value)} placeholder="Detalhes adicionais..." onFocus={onFocus} onBlur={onBlur} />

@@ -3,6 +3,7 @@ import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Pencil, RefreshCw } from 'lucide-react'
 import { PagamentosSection } from '@/components/dashboard/pagamentos-section'
+import { ArquivosSection } from './ArquivosSection'
 import {
   fmtMoeda, fmtData, getInitials,
   contratoStatusDerivado, diasParaVencer,
@@ -148,6 +149,24 @@ export default async function ContratoPage({ params }: { params: Promise<{ id: s
             pagamentos={pagamentos ?? []}
             contratoId={id}
             valorTotal={Number(contrato.valor_total)}
+          />
+
+          {/* Arquivos do contrato */}
+          <ArquivosSection
+            contratoId={id}
+            userId={user.id}
+            pasta="contrato"
+            titulo="Contrato assinado"
+            descricao="PDF ou imagem do contrato firmado"
+          />
+
+          {/* Comprovantes de pagamento */}
+          <ArquivosSection
+            contratoId={id}
+            userId={user.id}
+            pasta="comprovantes"
+            titulo="Comprovantes de pagamento"
+            descricao="Recibos, prints de PIX, boletos pagos"
           />
         </div>
 
