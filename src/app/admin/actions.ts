@@ -33,3 +33,14 @@ export async function setAtivo(userId: string, ativo: boolean) {
   })
   revalidatePath('/admin')
 }
+
+export async function deletarUsuario(userId: string) {
+  await verificarAdmin()
+  const admin = createAdminClient()
+  // Deleta contratos e pagamentos antes (caso RLS impeça cascade)
+  await admin.from('pagamentos').delete().eq('user_id', userId)
+  await admin.from('contratos').delete().eq('user_id', userId)
+  await admin.from('profiles').delete().eq('id', userId)
+  await admin.auth.admin.deleteUser(userId)
+  revalidatePath('/admin')
+}

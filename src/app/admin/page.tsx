@@ -2,7 +2,9 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import { fmtMoeda, fmtData } from '@/lib/utils'
-import { setPlano, setAtivo } from './actions'
+import { setAtivo } from './actions'
+import { BotaoExcluir } from './BotaoExcluir'
+import { BotaoPlano } from './BotaoPlano'
 
 const ADMIN_EMAIL = 'soaresvinicius11112@gmail.com'
 
@@ -190,21 +192,11 @@ export default async function AdminPage() {
 
                       <td style={{ padding: '14px 20px' }}>
                         {!isAdmin && (
-                          <div style={{ display: 'flex', gap: 8 }}>
-                            <form action={async () => {
-                              'use server'
-                              await setPlano(u.id, plano === 'pro' ? 'gratuito' : 'pro')
-                            }}>
-                              <button type="submit" style={{
-                                padding: '5px 12px', borderRadius: 7, fontSize: 12, fontWeight: 600,
-                                cursor: 'pointer', border: '1px solid #374151',
-                                background: plano === 'pro' ? '#1F2937' : '#7C3AED22',
-                                color: plano === 'pro' ? '#9CA3AF' : '#A78BFA',
-                              }}>
-                                {plano === 'pro' ? '↓ Free' : '↑ Pro'}
-                              </button>
-                            </form>
+                          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                            {/* Mudar plano */}
+                            <BotaoPlano userId={u.id} email={u.email} planoAtual={plano} />
 
+                            {/* Ativar/desativar */}
                             <form action={async () => {
                               'use server'
                               await setAtivo(u.id, !ativo)
@@ -218,6 +210,9 @@ export default async function AdminPage() {
                                 {ativo ? 'Desativar' : 'Ativar'}
                               </button>
                             </form>
+
+                            {/* Excluir conta */}
+                            <BotaoExcluir userId={u.id} email={u.email} />
                           </div>
                         )}
                       </td>
