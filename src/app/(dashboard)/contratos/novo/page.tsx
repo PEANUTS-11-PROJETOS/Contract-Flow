@@ -5,7 +5,8 @@ import { ArrowLeft } from 'lucide-react'
 import { NovoContratoForm } from './NovoContratoForm'
 import { LimiteBanner } from './LimiteBanner'
 
-const TIPOS = ['Prestação de serviço', 'Social media', 'Consultoria', 'Fornecimento']
+const TIPOS        = ['Prestação de serviço', 'Social media', 'Consultoria', 'Fornecimento']
+const ADMIN_EMAIL  = 'soaresvinicius11112@gmail.com'
 
 export default async function NovoContratoPage({
   searchParams,
@@ -16,9 +17,12 @@ export default async function NovoContratoPage({
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const params  = await searchParams
-  const tipoParam = params.tipo ?? ''
+  const params      = await searchParams
+  const tipoParam   = params.tipo ?? ''
   const tipoInicial = TIPOS.includes(tipoParam) ? tipoParam : 'Prestação de serviço'
+
+  // Admin nunca tem limite
+  if (user.email === ADMIN_EMAIL) return <NovoContratoForm tipoInicial={tipoInicial} />
 
   const [{ data: profile }, { count }] = await Promise.all([
     supabase.from('profiles').select('plano').eq('id', user.id).single(),
