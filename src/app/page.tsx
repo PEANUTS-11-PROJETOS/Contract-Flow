@@ -270,12 +270,55 @@ export default function LandingPage() {
               Mais popular
             </div>
             <p style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.75)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>Pro</p>
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, marginBottom: 6 }}>
-              <span style={{ fontSize: 36, fontWeight: 800, color: '#fff' }}>R$ 29</span>
-              <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.75)', marginBottom: 6 }}>,90/mês</span>
+
+            {/* Duas opções de preço */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
+              {/* PIX */}
+              <div style={{ background: 'rgba(255,255,255,0.12)', borderRadius: 10, padding: '12px 16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ fontSize: 18 }}>💸</span>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>PIX</span>
+                    <span style={{
+                      fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 10,
+                      background: '#F7D070', color: '#7A4E0D',
+                    }}>MAIS BARATO</span>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <span style={{ fontSize: 22, fontWeight: 800, color: '#fff' }}>R$ 29</span>
+                    <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)' }}>,90/mês</span>
+                  </div>
+                </div>
+                <a
+                  href="https://wa.me/5511989408375?text=Olá!%20Quero%20assinar%20o%20plano%20Pro%20do%20ContractFlow%20via%20PIX%20(R$%2029,90/mês)."
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: 'block', textAlign: 'center', width: '100%',
+                    padding: '9px 0', borderRadius: 8, fontSize: 13, fontWeight: 700,
+                    color: 'var(--primary)', background: '#fff', textDecoration: 'none',
+                  }}
+                >
+                  💬 Assinar via WhatsApp
+                </a>
+              </div>
+
+              {/* Cartão */}
+              <div style={{ background: 'rgba(255,255,255,0.08)', borderRadius: 10, padding: '12px 16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ fontSize: 18 }}>💳</span>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.9)' }}>Cartão</span>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <span style={{ fontSize: 22, fontWeight: 800, color: 'rgba(255,255,255,0.9)' }}>R$ 31</span>
+                    <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>,90/mês</span>
+                  </div>
+                </div>
+                <BotaoAssinar />
+              </div>
             </div>
-            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)', marginBottom: 28 }}>Para MEIs em crescimento</p>
-            <BotaoAssinar />
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {[
                 'Contratos ilimitados',

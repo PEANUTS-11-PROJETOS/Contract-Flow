@@ -36,7 +36,7 @@ export function BotaoAssinar() {
         display: 'block', width: '100%', textAlign: 'center',
         padding: '11px 0', borderRadius: 10, fontSize: 14, fontWeight: 700,
         color: 'var(--primary)', background: '#fff', border: 'none',
-        cursor: loading ? 'not-allowed' : 'pointer', marginBottom: 28,
+        cursor: loading ? 'not-allowed' : 'pointer',
         opacity: loading ? 0.7 : 1, transition: 'opacity 0.15s',
       }}
     >
