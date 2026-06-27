@@ -6,9 +6,8 @@ import { Upload, FileText, Trash2, ExternalLink, Loader2 } from 'lucide-react'
 
 interface Arquivo {
   name: string
-  url: string
+  signedUrl: string
   size: number
-  created_at: string
 }
 
 interface Props {
@@ -26,33 +25,59 @@ function fmtBytes(bytes: number) {
 }
 
 export function ArquivosSection({ contratoId, userId, pasta, titulo, descricao }: Props) {
-  const [arquivos, setArquivos] = useState<Arquivo[]>([])
+  const [arquivos, setArquivos]   = useState<Arquivo[]>([])
   const [carregado, setCarregado] = useState(false)
+  const [carregando, setCarregando] = useState(false)
   const [uploading, setUploading] = useState(false)
-  const [deleting, setDeleting] = useState<string | null>(null)
+  const [deleting, setDeleting]   = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
+  // Bucket é PRIVADO — caminhos isolados por user_id (LGPD)
   const prefix = `${userId}/contratos/${contratoId}/${pasta}/`
 
   const carregarArquivos = useCallback(async () => {
-    const { data, error } = await supabase.storage.from('arquivos').list(prefix, { sortBy: { column: 'created_at', order: 'desc' } })
+    setCarregando(true)
+    const { data, error } = await supabase.storage
+      .from('arquivos')
+      .list(prefix, { sortBy: { column: 'created_at', order: 'desc' } })
+
     if (error) {
       if (error.message.includes('Bucket not found')) {
-        toast.error('Bucket "arquivos" não existe no Supabase. Veja as instruções de configuração.')
+        toast.error('Configure o bucket "arquivos" no Supabase (veja supabase/storage_arquivos.sql).')
+      } else {
+        toast.error('Erro ao carregar arquivos.')
       }
+      setCarregando(false)
       return
     }
-    const lista: Arquivo[] = (data ?? []).filter(f => f.name !== '.emptyFolderPlaceholder').map(f => {
-      const { data: { publicUrl } } = supabase.storage.from('arquivos').getPublicUrl(prefix + f.name)
-      return {
-        name: f.name,
-        url: publicUrl,
-        size: f.metadata?.size ?? 0,
-        created_at: f.created_at ?? '',
-      }
-    })
+
+    const nomes = (data ?? [])
+      .filter(f => f.name !== '.emptyFolderPlaceholder')
+      .map(f => ({ name: f.name, size: f.metadata?.size ?? 0 }))
+
+    if (nomes.length === 0) {
+      setArquivos([])
+      setCarregado(true)
+      setCarregando(false)
+      return
+    }
+
+    // URLs assinadas expiram em 1 hora — bucket privado, dados pessoais protegidos
+    const { data: signed, error: signErr } = await supabase.storage
+      .from('arquivos')
+      .createSignedUrls(nomes.map(f => prefix + f.name), 3600)
+
+    if (signErr) { toast.error('Erro ao gerar links.'); setCarregando(false); return }
+
+    const lista: Arquivo[] = nomes.map((f, i) => ({
+      name:      f.name,
+      signedUrl: signed?.[i]?.signedUrl ?? '',
+      size:      f.size,
+    }))
+
     setArquivos(lista)
     setCarregado(true)
+    setCarregando(false)
   }, [prefix])
 
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -61,9 +86,9 @@ export function ArquivosSection({ contratoId, userId, pasta, titulo, descricao }
     if (file.size > 20 * 1024 * 1024) { toast.error('Arquivo muito grande. Máximo 20 MB.'); return }
 
     setUploading(true)
-    const ext = file.name.split('.').pop()
+    const ext      = file.name.split('.').pop()
     const safeName = `${Date.now()}.${ext}`
-    const path = prefix + safeName
+    const path     = prefix + safeName
 
     const { error } = await supabase.storage.from('arquivos').upload(path, file)
     setUploading(false)
@@ -124,9 +149,13 @@ export function ArquivosSection({ contratoId, userId, pasta, titulo, descricao }
         </label>
       </div>
 
-      {/* Lista de arquivos */}
+      {/* Lista */}
       <div style={{ padding: '8px 0' }}>
-        {!carregado ? (
+        {carregando ? (
+          <div style={{ padding: '20px', textAlign: 'center' }}>
+            <Loader2 size={20} style={{ animation: 'spin 1s linear infinite', color: 'var(--muted-fg)' }} />
+          </div>
+        ) : !carregado ? (
           <button
             onClick={carregarArquivos}
             style={{
@@ -155,15 +184,17 @@ export function ArquivosSection({ contratoId, userId, pasta, titulo, descricao }
               </p>
               <p style={{ fontSize: 11, color: 'var(--muted-fg)' }}>{fmtBytes(f.size)}</p>
             </div>
-            <a
-              href={f.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ padding: '5px', color: 'var(--muted-fg)', display: 'flex' }}
-              title="Abrir"
-            >
-              <ExternalLink size={15} />
-            </a>
+            {f.signedUrl && (
+              <a
+                href={f.signedUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ padding: '5px', color: 'var(--muted-fg)', display: 'flex' }}
+                title="Abrir (link expira em 1h)"
+              >
+                <ExternalLink size={15} />
+              </a>
+            )}
             <button
               onClick={() => handleDelete(f.name)}
               disabled={deleting === f.name}
@@ -171,7 +202,7 @@ export function ArquivosSection({ contratoId, userId, pasta, titulo, descricao }
                 padding: '5px', background: 'none', border: 'none', cursor: 'pointer',
                 color: '#F87171', display: 'flex', opacity: deleting === f.name ? 0.4 : 1,
               }}
-              title="Excluir"
+              title="Excluir arquivo"
             >
               <Trash2 size={15} />
             </button>

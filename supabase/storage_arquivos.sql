@@ -1,16 +1,18 @@
--- 1. Criar bucket "arquivos" (execute no Supabase Dashboard > Storage > New Bucket)
--- Nome: arquivos | Public: true (para URLs diretas funcionarem)
--- OU execute via SQL:
+-- 1. Criar bucket "arquivos" — PRIVADO (documentos contêm CPF/CNPJ, LGPD)
+-- Execute no Supabase SQL Editor:
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES (
   'arquivos',
   'arquivos',
-  true,
+  false, -- NUNCA público: arquivos contêm dados pessoais (CPF/CNPJ, contratos)
   20971520, -- 20 MB
   ARRAY['application/pdf','image/jpeg','image/png','image/webp',
         'application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document']
 )
 ON CONFLICT (id) DO NOTHING;
+
+-- Se o bucket já existe como público, corrija:
+-- UPDATE storage.buckets SET public = false WHERE id = 'arquivos';
 
 -- 2. RLS: usuário só sobe arquivos na própria pasta
 CREATE POLICY "upload_proprio" ON storage.objects

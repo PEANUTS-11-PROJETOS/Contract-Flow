@@ -34,10 +34,14 @@ export function PagamentosSection({ pagamentos: inicial, contratoId, valorTotal 
   async function marcarPago(id: string) {
     setMarcando(id)
     const hoje = new Date().toISOString().split('T')[0]
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { setMarcando(null); return }
+    // user_id garante que RLS e código concordam — defesa em profundidade
     const { error } = await supabase
       .from('pagamentos')
       .update({ status: 'pago', data_pagamento: hoje })
       .eq('id', id)
+      .eq('user_id', user.id)
     if (error) {
       toast.error('Erro ao atualizar pagamento.')
     } else {
