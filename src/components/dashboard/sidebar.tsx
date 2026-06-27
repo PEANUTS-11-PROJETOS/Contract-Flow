@@ -2,24 +2,31 @@
 import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
-import { LogOut, LayoutDashboard, FileText, Users, CreditCard, BookOpen, ShieldCheck, FileBarChart } from 'lucide-react'
+import { LogOut, LayoutDashboard, FileText, Users, CreditCard, BookOpen, ShieldCheck, FileBarChart, Settings } from 'lucide-react'
 
 const ADMIN_EMAIL = 'soaresvinicius11112@gmail.com'
 
 const nav = [
-  { href: '/dashboard',   label: 'Painel',       icon: LayoutDashboard },
-  { href: '/contratos',   label: 'Contratos',    icon: FileText },
-  { href: '/clientes',    label: 'Clientes',     icon: Users },
-  { href: '/pagamentos',  label: 'Pagamentos',   icon: CreditCard },
-  { href: '/modelos',    label: 'Modelos',    icon: BookOpen },
-  { href: '/relatorio', label: 'Relatório',  icon: FileBarChart },
+  { href: '/dashboard',      label: 'Painel',        icon: LayoutDashboard },
+  { href: '/contratos',      label: 'Contratos',     icon: FileText },
+  { href: '/clientes',       label: 'Clientes',      icon: Users },
+  { href: '/pagamentos',     label: 'Pagamentos',    icon: CreditCard },
+  { href: '/modelos',        label: 'Modelos',       icon: BookOpen },
+  { href: '/relatorio',      label: 'Relatório',     icon: FileBarChart },
+  { href: '/configuracoes',  label: 'Configurações', icon: Settings },
 ]
 
-function getInitials(email: string) {
+function getInitials(nome: string, email: string) {
+  if (nome.trim()) {
+    const parts = nome.trim().split(' ')
+    return parts.length >= 2
+      ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+      : parts[0].slice(0, 2).toUpperCase()
+  }
   return email.slice(0, 2).toUpperCase()
 }
 
-export function Sidebar({ email }: { email: string }) {
+export function Sidebar({ email, nome }: { email: string; nome: string }) {
   const pathname = usePathname()
   const router   = useRouter()
 
@@ -139,13 +146,13 @@ export function Sidebar({ email }: { email: string }) {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 12, fontWeight: 700,
           }}>
-            {getInitials(email)}
+            {getInitials(nome, email)}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {email}
+              {nome || email}
             </p>
-            <p style={{ fontSize: 11, color: 'var(--muted-fg)' }}>MEI</p>
+            <p style={{ fontSize: 11, color: 'var(--muted-fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nome ? email : 'MEI'}</p>
           </div>
           <LogOut size={15} style={{ color: 'var(--muted-fg)', flexShrink: 0 }} />
         </button>

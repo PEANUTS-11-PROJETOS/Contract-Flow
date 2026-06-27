@@ -23,6 +23,20 @@ export default async function ContratoPage({ params }: { params: Promise<{ id: s
     .from('pagamentos').select('*').eq('contrato_id', id)
     .order('data_vencimento', { ascending: true })
 
+  const { data: profile } = await supabase
+    .from('profiles').select('nome').eq('id', user.id).single()
+
+  const nomeUsuario = profile?.nome || user.email || ''
+  const fluxo       = contrato.fluxo ?? 'receber'
+
+  // receber: eu presto = eu sou o prestador, cliente é contratante
+  // pagar:   eu pago   = eu sou o contratante, cliente é fornecedor/prestador
+  const labelEu      = fluxo === 'receber' ? 'Prestador (você)' : 'Contratante (você)'
+  const labelCliente = fluxo === 'receber' ? 'Contratante' : 'Prestador / Fornecedor'
+  const badgeFluxo   = fluxo === 'receber'
+    ? { label: '💰 A receber', bg: 'var(--primary-light)', color: 'var(--primary-700)' }
+    : { label: '💸 A pagar',   bg: '#FFF7E6',              color: '#9A6B12' }
+
   const st      = contratoStatusDerivado(contrato.data_renovacao)
   const chip    = STATUS_CHIP[st]
   const av      = STATUS_AVATAR[st]
@@ -69,6 +83,12 @@ export default async function ContratoPage({ params }: { params: Promise<{ id: s
                 background: chip.bg, color: chip.color,
               }}>
                 {STATUS_LABEL[st]}
+              </span>
+              <span style={{
+                padding: '3px 10px', borderRadius: 20, fontSize: 12, fontWeight: 700,
+                background: badgeFluxo.bg, color: badgeFluxo.color,
+              }}>
+                {badgeFluxo.label}
               </span>
             </div>
             <p style={{ fontSize: 13, color: 'var(--muted-fg)' }}>
@@ -119,10 +139,10 @@ export default async function ContratoPage({ params }: { params: Promise<{ id: s
                 background: 'var(--surface-muted)', border: '1px solid var(--card-border)',
               }}>
                 <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted-fg)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
-                  Contratante
+                  {labelEu}
                 </p>
-                <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--fg)' }}>{user.email}</p>
-                <p style={{ fontSize: 12, color: 'var(--muted-fg)', marginTop: 2 }}>MEI · Prestador de serviço</p>
+                <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--fg)' }}>{nomeUsuario}</p>
+                <p style={{ fontSize: 12, color: 'var(--muted-fg)', marginTop: 2 }}>{user.email}</p>
               </div>
 
               {/* Cliente */}
@@ -131,7 +151,7 @@ export default async function ContratoPage({ params }: { params: Promise<{ id: s
                 background: 'var(--surface-muted)', border: '1px solid var(--card-border)',
               }}>
                 <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted-fg)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
-                  Cliente
+                  {labelCliente}
                 </p>
                 <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--fg)' }}>{contrato.cliente_nome}</p>
                 {contrato.cliente_email && (

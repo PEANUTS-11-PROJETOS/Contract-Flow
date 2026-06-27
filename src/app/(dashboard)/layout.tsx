@@ -8,9 +8,15 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('nome')
+    .eq('id', user.id)
+    .single()
+
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--bg)' }}>
-      <Sidebar email={user.email ?? ''} />
+      <Sidebar email={user.email ?? ''} nome={profile?.nome ?? ''} />
       <main style={{ flex: 1, overflowY: 'auto', padding: '32px 40px' }}>
         {children}
       </main>

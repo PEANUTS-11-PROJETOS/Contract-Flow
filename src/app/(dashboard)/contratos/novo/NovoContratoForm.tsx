@@ -44,6 +44,7 @@ export function NovoContratoForm({ tipoInicial }: { tipoInicial: string }) {
   const [loading, setLoading] = useState(false)
   const [parcelado, setParcelado] = useState(false)
   const [form, setForm] = useState({
+    fluxo:               'receber',
     tipo:                tipoInicial,
     valor_total:         '',
     periodicidade:       'mensal',
@@ -81,6 +82,7 @@ export function NovoContratoForm({ tipoInicial }: { tipoInicial: string }) {
 
     const { data: contratoData, error } = await supabase.from('contratos').insert({
       user_id:           user.id,
+      fluxo:             form.fluxo,
       titulo:            form.tipo,
       tipo:              form.tipo,
       cliente_nome:      form.cliente_nome,
@@ -146,6 +148,30 @@ export function NovoContratoForm({ tipoInicial }: { tipoInicial: string }) {
       </div>
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        {/* Fluxo — receber ou pagar */}
+        <div style={cardStyle}>
+          <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted-fg)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Tipo de operação</p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            {[
+              { value: 'receber', label: 'Vou receber', desc: 'Eu presto o serviço', color: 'var(--primary)' },
+              { value: 'pagar',   label: 'Vou pagar',   desc: 'Eu contrato alguém',  color: '#D98A1F' },
+            ].map(op => (
+              <button key={op.value} type="button" onClick={() => set('fluxo', op.value)} style={{
+                padding: '14px 16px', borderRadius: 11, fontSize: 14, fontWeight: 600,
+                cursor: 'pointer', border: '2px solid',
+                borderColor: form.fluxo === op.value ? op.color : 'var(--border)',
+                background: form.fluxo === op.value ? (op.value === 'receber' ? 'var(--primary-light)' : '#FFF7E6') : 'var(--surface)',
+                color: form.fluxo === op.value ? op.color : 'var(--muted-fg)',
+                textAlign: 'left', transition: 'all 0.12s',
+              }}>
+                <div style={{ fontSize: 18, marginBottom: 4 }}>{op.value === 'receber' ? '💰' : '💸'}</div>
+                <div>{op.label}</div>
+                <div style={{ fontSize: 12, fontWeight: 400, marginTop: 2, opacity: 0.75 }}>{op.desc}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Tipo */}
         <div style={cardStyle}>
           <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted-fg)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Tipo de contrato</p>
